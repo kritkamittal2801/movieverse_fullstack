@@ -1,0 +1,624 @@
+*{
+    margin: 0;
+}
+
+ /***** body *****/
+body{
+    font-family: 'Roboto', sans-serif;
+}
+
+body::-webkit-scrollbar{
+    display: none;
+}
+
+
+ /***** navbar *****/
+.navbar{
+    width: 100%;
+    height:70px;
+    background-color: black;
+}
+
+.navbar.active{
+    background-color: rgba(100, 148, 237, 0.216);
+}
+
+.navbar-container{
+    display: flex;
+    align-items: center;
+    padding: 0 50px;
+    height:100%;
+    color: white;
+    font-family: 'Sen', sans-serif;
+}
+
+.navbar-container.active{
+    color: black;
+}
+
+ /***** logo *****/
+.logo-container{
+    flex-grow: 1;
+    margin-right: -30px;
+}
+
+.logo{
+    font-size: 30px;
+    color: rgb(17, 127, 185);
+    
+}
+
+ /***** menu *****/
+.menu-container{
+    flex-grow: 5;
+}
+
+.menu-list{
+    display: flex;
+    list-style: none;
+}
+
+.menu-list-item{
+    margin: 15px;
+}
+
+.menu-list .scroll a{
+    text-decoration: none;
+    color: white;
+}
+
+.menu-list-item.active{
+    font-weight: bold;
+}
+
+ /***** profile section *****/
+.profile-container{
+    flex-grow: 2;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.profile-picture{
+    height:30px;
+    width:30px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+.profile-container-text{
+    margin:0 20px;
+}
+
+.toggle{
+    height:20px;
+    width:40px;
+    background-color: white;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: relative;
+}
+
+.toggle.active{
+    background-color: black;
+}
+
+.toggle-icon{
+    color: goldenrod;
+}
+
+.toggle-ball{
+    width:18px;
+    height:18px;
+    background-color: black;
+    position: absolute;
+    right:1px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.5s ease all;
+}
+
+.toggle-ball.active{
+    background-color: white;
+    transform: translateX(-20px);
+}
+
+ /***** sidebar *****/
+.sidebar{
+    z-index: 1;
+    height: 100%;
+    width: 50px;
+    position: fixed;
+    background-color: black;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    top:0px;
+}
+
+.sidebar.active{
+    background-color: rgba(100, 148, 237, 0.216);
+}
+
+.sidebar-item{
+    color: white;
+    margin-top: 75px;
+}
+
+.sidebar-item.active{
+    color:black;
+}
+
+/***** entertainment content container *****/
+
+.container{
+    background-color: #151515;
+    min-height: calc(100vh - 50px);
+    color:white;
+}
+
+.container.active{
+    background-color: whitesmoke;
+    color:black;
+}
+
+.content-container{
+    margin-left: 50px;
+}
+
+.featured-content{
+    overflow: hidden;
+    position: relative;
+    height: 50vh;
+    padding:50px;
+    border-top: 1px solid grey;
+    border-bottom: 1px solid grey;
+}
+
+.featured-content.active{
+    border-top: 2px solid black;
+    border-bottom: 2px solid black;
+}
+
+.background-video{
+    position: absolute;
+    top: 50px;
+    left:50px;
+    margin-left: -50px;
+    margin-top: -50px;
+    width:calc(100vw - 50px);
+    object-fit:  cover;
+    opacity: 0.5;
+    min-height: 100%;
+    
+}
+
+.background-video.active{
+    opacity:0;
+}
+
+.featured-desc{
+    width:500px;
+    color:lightgrey;
+    position:  relative;
+    margin: 30px 0;
+    z-index: 10000;
+}
+
+.link-to-video{
+    color: white;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.featured-button{
+    position:  relative;
+    background-color: rgb(17, 127, 185);
+    color:white;
+    padding:10px 20px;
+    border-radius:10px;
+    border:none;
+    outline:none;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+.movie-list-container{
+    padding: 20px;
+}
+
+.movie-list-wrapper{
+    position: relative;
+    overflow: hidden;
+}
+
+.movie-list{
+    display: flex;
+    align-items: center;
+    height: 300px;
+    transition: all 1s ease-in-out;
+    transform: translateX(0);
+}
+
+.movie-list-item{
+    margin-right: 30px;
+    position: relative;
+}
+
+.movie-list-item-img{
+    width: 260px;
+    height: 200px;
+    object-fit: cover;
+    transition: all 0.7s ease-in-out;
+    border-radius:10px; 
+}
+
+.movie-list-item:hover .movie-list-item-img{
+    transform: scale(1.2);
+    margin: 0 30px;
+    opacity: 0.5;
+}
+
+.movie-list-item:hover .movie-list-item-button,
+.movie-list-item:hover .movie-list-item-title,
+.movie-list-item:hover .movie-list-item-desc{
+    opacity: 1;
+}
+
+.movie-list-item-title{
+    position:absolute;
+    top:15px;
+    left:30px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    opacity: 0;
+    transition: all 0.7s ease-in-out;
+}
+
+.movie-list-item-desc{
+    position:absolute;
+    top:35px;
+    left:30px;
+    width:240px;
+    color: white;
+    opacity: 0;
+    transition: all 0.7s ease-in-out;
+
+}
+
+.movie-list-item-button{
+    position: absolute;
+    top: 145px;
+    left:30px;
+    opacity: 0;
+    transition: all 0.7s ease-in-out;
+    background-color: rgb(17, 127, 185);
+    color:white;
+    padding:10px 20px;
+    border-radius:10px;
+    border:none;
+    outline:none;
+    cursor: pointer;
+}
+
+/***** arrow for sliding movie list wrapper *****/
+.arrow{
+    font-size:50px;
+    position: absolute;
+    top:120px;
+    right: 0px;
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+
+/***** FAQ SECTION *****/
+
+.faq-section{
+    margin-left:50px;
+    overflow: hidden;
+    padding-bottom: 50px;
+}
+
+.faq-heading{
+    height:50px;
+    width: calc(100vw - 50px);
+    border-bottom: #777;
+    background-color: black;
+    color:#ffffff;
+    padding:15px;
+    font-size: 2rem;
+    
+}
+
+.faq-heading.active{
+    background-color: rgba(100, 148, 237, 0.216);
+    color: black;
+}
+
+.faq-container{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    background-color: #151515;
+    padding-bottom: 50px;
+}
+
+.faq-container.active{
+    background-color: whitesmoke;
+}
+
+.faq-page {
+    color: #fcfcfc;
+    cursor: pointer;
+    padding: 30px 20px;
+    width: 60%;
+    border: none;
+    outline: none;
+    transition: 0.4s;
+    margin: auto;
+    margin-bottom: 10px;
+    margin-top: 20px;
+}
+
+.faq-page.active{
+    color: black;
+}
+
+.faq-body{
+    margin: auto;
+   width: 50%; 
+   padding: 15px;
+   font-size: 20px;
+}
+
+.faq-body p{
+    color: antiquewhite;
+}
+
+.faq-body.active p{
+    color: black;
+}
+
+.faq-page:hover {
+    background-color: #f9f9f922;
+}
+
+.faq-page.active:hover {
+    background-color: #f9f9f922;
+    transform: scale(1.1);
+}
+
+/* Style the faq-page panel. Note: hidden by default */
+.faq-body {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    transition:0.4;
+}
+
+.faq-page:after {
+    content: '\02795' ;
+    /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: #ffffff;
+    float: right;
+    margin-left: 5px;
+}
+
+.plusminus:after {
+    content: "\2796";
+    /* Unicode character for "minus" sign (-) */
+}
+
+/***** Responsiveness of the page *****/
+@media only screen and (max-width:1005px){
+    .featured-desc{
+        width: 300px;
+    }
+
+    .menu-container{
+        display:none;
+    }
+}
+
+@media only screen and (max-width:500px){
+    .logo{
+        font-size: 20px;
+    }
+
+    .profile-container{
+        margin-right: -5px;
+    }
+
+    .profile-picture{
+        height:30px;
+        width:30px;
+        display: none;
+    }
+}
+
+
+#sidebar-search {
+    width: 150px;
+    padding: 5px;
+    margin: 5px 0;
+}
+
+#search-results {
+    background: #1c1c1c;
+    color: white;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 5px;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+#search-results p {
+    padding: 5px;
+    margin: 0;
+    cursor: pointer;
+}
+
+#search-results p:hover {
+    background-color: #333;
+}
+
+.search-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    max-width: 90%;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 10000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.search-modal input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#modal-results p {
+    margin: 5px 0;
+    padding: 5px;
+    cursor: pointer;
+}
+
+#modal-results p:hover {
+    background-color: #ddd;
+}
+
+/* Blur the background when modal is active */
+body.modal-active > *:not(.search-modal) {
+    filter: blur(5px);
+    pointer-events: none;
+}
+
+.search-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    cursor: pointer;
+    background-color: rgba(0,0,0,0.2);
+    padding: 8px;
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.search-result:hover {
+    background-color: rgba(0,0,0,0.4);
+}
+
+.search-result-img {
+    width: 50px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.search-result-text {
+    color: white;
+    font-size: 14px;
+}
+
+
+/* Helper to hide sections */
+.hidden { display: none; }
+
+/* Personalized "Because You Watched" Section */
+.personalized-section {
+    background: linear-gradient(120deg, rgba(17,127,185,0.1), rgba(0,0,0,0.85));
+    border-top: 1px solid rgba(17,127,185,0.3);
+    border-bottom: 1px solid rgba(17,127,185,0.3);
+    padding: 25px 20px;
+    margin-bottom: 30px;
+    border-radius: 12px;
+}
+
+/* Section Title Styling */
+.because-watched-title {
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 15px;
+}
+
+/* Movie Item Customization */
+#because-you-watched-list .movie-list-item-img {
+    width: 220px;
+    height: 160px;
+    border-radius: 12px;
+    transition: all 0.6s ease-in-out;
+    border: 2px solid transparent;
+}
+
+/* Hover Effect */
+#because-you-watched-list .movie-list-item:hover .movie-list-item-img {
+    transform: scale(1.15);
+    opacity: 0.85;
+    border-color: #ffd700;
+}
+
+#because-you-watched-list .movie-list-item:hover .movie-list-item-title,
+#because-you-watched-list .movie-list-item:hover .movie-list-item-desc,
+#because-you-watched-list .movie-list-item:hover .movie-list-item-button {
+    opacity: 1;
+}
+
+#because-you-watched-list .movie-list-item:hover::after {
+    display: block;
+}
+
+.movie-list-item {
+  cursor: pointer;
+}
+/* Logout icon default (dark mode) */
+.logout-icon {
+    color: white;
+    font-size: 28px;       /* Bigger size */
+    margin-left: 15px;     /* More spacing from profile */
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.logout-icon:hover {
+    color: #1a8f9e;       /* Red on hover */
+    transform: scale(1.2); /* Slightly enlarge on hover */
+}
+
+/* Logout icon in light mode */
+.navbar-container.active .logout-icon {
+    color: black;          /* Black for light mode */
+}
+
+.navbar-container.active .logout-icon:hover {
+    color: #1f86b9;        /* Hover effect in light mode */
+}
+
+/* Navbar links in light mode */
+.navbar-container.active .link-to-video {
+    color: black;
+    font-weight: bold ;
+}
+
+/* Optional: hover effect */
+.navbar-container.active .link-to-video:hover {
+    color: rgb(17, 127, 185);
+}
+.navbar-container .link-to-video:hover {
+    color: rgb(17, 127, 185); 
+}
