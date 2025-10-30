@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     git \
     python3-dev \
     libatlas-base-dev \
+    libopenblas-dev \
+    liblapack-dev \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
