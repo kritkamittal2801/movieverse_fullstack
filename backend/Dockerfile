@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     python3-dev \
-    libatlas-base-dev \
     libopenblas-dev \
     liblapack-dev \
     libffi-dev \
@@ -21,9 +20,9 @@ WORKDIR /app
 # Copy dependency list and install dependencies
 COPY requirements.txt .
 
-# Install Python dependencies
+# Upgrade pip and install prebuilt binary wheels (avoid compiling blis from source)
 RUN pip install --upgrade pip setuptools wheel
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --only-binary=:all: --prefer-binary || pip install -r requirements.txt --no-cache-dir
 
 # Copy the rest of the application code
 COPY . .
