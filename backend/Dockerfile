@@ -22,6 +22,7 @@ COPY requirements.txt .
 
 # Upgrade pip and install prebuilt binary wheels (avoid compiling blis from source)
 RUN pip install --upgrade pip setuptools wheel
+RUN pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
 RUN pip install -r requirements.txt --only-binary=:all: --prefer-binary || pip install -r requirements.txt --no-cache-dir
 
 # Copy the rest of the application code
