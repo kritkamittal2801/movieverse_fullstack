@@ -10,6 +10,8 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 import os
+import requests
+from io import BytesIO
 from search_api import search_bp
 from huggingface_hub import HfApi
 
@@ -20,10 +22,14 @@ api.whoami(token=os.getenv("HF_TOKEN"))
 load_dotenv()
 
 
-# Load movies with images once at startup
-with open("data/movies_full.pkl", "rb") as f:
-    movies_df = pickle.load(f)
+# --- Load dataset from Hugging Face dynamically ---
+HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
+print(f"Loading movies from {HF_URL} ...")
+response = requests.get(HF_URL)
+response.raise_for_status()
+movies_df = pickle.load(BytesIO(response.content))
+print(f"Loaded {len(movies_df)} movies from Hugging Face")
 # Stack embeddings for similarity calculations
 embs = np.vstack(movies_df['embedding'].values)
 

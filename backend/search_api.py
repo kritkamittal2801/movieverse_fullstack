@@ -5,6 +5,9 @@ import pickle
 import numpy as np
 import pandas as pd
 import re
+import requests
+from io import BytesIO
+import os
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
@@ -34,11 +37,13 @@ def map_genres(genre_str):
 search_bp = Blueprint('search', __name__)
 CORS(search_bp)
 
-PICKLE = "data/movies_full.pkl"
+HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
-# Load movies data
-with open(PICKLE, "rb") as f:
-    movies_df = pickle.load(f)
+print(f"Loading search data from {HF_URL} ...")
+response = requests.get(HF_URL)
+response.raise_for_status()
+movies_df = pickle.load(BytesIO(response.content))
+print(f"✅ Search dataset loaded ({len(movies_df)} movies)")
 
 # Convert numeric genre IDs to readable genre names
 movies_df["genre"] = movies_df["genre"].apply(map_genres)
