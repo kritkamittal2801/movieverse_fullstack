@@ -18,7 +18,6 @@ Thumbs.db
 backend/users.csv
 backend/user_activity.csv
 backend/data/movies_embeddings.pkl
-backend/data/movies_full.pkl
 backend/data/movies_with_embeddings.pkl
 backend/data/movies_with_images.pkl
 backend/data/movies_clean.csv

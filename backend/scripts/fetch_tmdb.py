@@ -12,7 +12,7 @@ API_KEY = os.getenv("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3"
 OUT_CSV = "./data/movies_raw.csv"
 
-def fetch_popular_movies(pages=10):
+def fetch_popular_movies(pages=50):
     movies = []
     for page in range(1, pages + 1):
         url = f"{BASE_URL}/movie/popular?api_key={API_KEY}&language=en-US&page={page}"
@@ -50,7 +50,7 @@ def fetch_popular_movies(pages=10):
 
 
 if __name__ == "__main__":
-    movies = fetch_popular_movies(pages=10)  # ~200 movies
+    movies = fetch_popular_movies(pages=50)  
     with open(OUT_CSV, "w", newline='', encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["title", "description", "release_date", "genre"])
         writer.writeheader()

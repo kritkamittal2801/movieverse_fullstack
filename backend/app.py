@@ -11,6 +11,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 import os
 from search_api import search_bp
+from huggingface_hub import HfApi
+
+
+api = HfApi()
+api.whoami(token=os.getenv("HF_TOKEN"))
 
 load_dotenv()
 
