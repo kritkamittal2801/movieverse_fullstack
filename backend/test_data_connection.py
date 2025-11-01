@@ -10,7 +10,7 @@ print("MOVIES_URL:", movies_url)
 
 try:
     df = pd.read_pickle(movies_url)
-    print("✅ Successfully loaded movies data!")
+    print(" Successfully loaded movies data!")
     print(df.head())
 except Exception as e:
-    print("❌ Failed to load dataset:", e)
+    print(" Failed to load dataset:", e)
