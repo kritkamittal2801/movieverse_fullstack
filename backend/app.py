@@ -230,7 +230,8 @@ def get_genre_weighted_recommendations(base_movie_title, top_n=10):
 # Default route
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return "App is running!"
+
 
 
 @app.route("/moviewebsite")
@@ -430,6 +431,11 @@ def activity():
         ])
 
     return jsonify({'status': 'success'})
+
+
+@app.route('/health')
+def health():
+    return "OK", 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
