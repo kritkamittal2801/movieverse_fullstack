@@ -20,16 +20,24 @@ WORKDIR /app
 # Copy dependency list and install dependencies
 COPY requirements.txt .
 
-# Upgrade pip and install prebuilt binary wheels (avoid compiling blis from source)
+# Upgrade pip and install prebuilt binary wheels (avoid compiling heavy deps from source)
 RUN pip install --upgrade pip setuptools wheel
 RUN pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
 RUN pip install -r requirements.txt --only-binary=:all: --prefer-binary || pip install -r requirements.txt --no-cache-dir
 
-# Copy the rest of the application code
+# Copy the rest of the app code
 COPY . .
 
-# Expose Flask port
+# --- ✅ Add environment variable defaults (safe fallbacks for Render) ---
+ENV PORT=5000
+ENV PYTHONUNBUFFERED=1
+ENV HF_HUB_DISABLE_SYMLINKS_WARNING=1
+
+# --- ✅ Optional: preload sentence-transformer model for faster startup ---
+# RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
+# Expose Flask/Gunicorn port
 EXPOSE 5000
 
-# Start the Flask app with Gunicorn (production server)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# --- ✅ Use Gunicorn to run Flask app in production ---
+CMD ["gunicorn", "--workers", "2", "--threads", "4", "--timeout", "120", "--bind", "0.0.0.0:5000", "app:app"]

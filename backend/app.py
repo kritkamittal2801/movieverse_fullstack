@@ -4,6 +4,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 import csv
 import os
+from huggingface_hub import HfApi, HfFileSystem
+import io
+
 
 import pickle
 import numpy as np
@@ -14,22 +17,37 @@ import requests
 from io import BytesIO
 from search_api import search_bp
 from huggingface_hub import HfApi
-
+load_dotenv()
 
 api = HfApi()
 api.whoami(token=os.getenv("HF_TOKEN"))
+HF_USERDATA_REPO = os.getenv("USERDATA_REPO")
 
-load_dotenv()
+fs = HfFileSystem(token=os.getenv("HF_TOKEN"))
+
+
 
 
 # --- Load dataset from Hugging Face dynamically ---
 HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
-print(f"Loading movies from {HF_URL} ...")
-response = requests.get(HF_URL)
-response.raise_for_status()
-movies_df = pickle.load(BytesIO(response.content))
-print(f"Loaded {len(movies_df)} movies from Hugging Face")
+try:
+    print(f"Loading movies from {HF_URL} ...")
+
+    hf_token = os.getenv("HF_TOKEN")
+    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+
+    response = requests.get(HF_URL, headers=headers)
+    response.raise_for_status()
+
+    movies_df = pickle.load(BytesIO(response.content))
+    print(f" Loaded {len(movies_df)} movies from Hugging Face (private access OK)")
+
+except Exception as e:
+    print(" Failed to load dataset:", e)
+    movies_df = pd.DataFrame(columns=['title', 'description', 'image', 'embedding', 'genre'])
+
+
 # Stack embeddings for similarity calculations
 embs = np.vstack(movies_df['embedding'].values)
 

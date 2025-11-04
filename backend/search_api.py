@@ -1,4 +1,3 @@
-# backend/search_api.py
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
 import pickle
@@ -39,11 +38,22 @@ CORS(search_bp)
 
 HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
-print(f"Loading search data from {HF_URL} ...")
-response = requests.get(HF_URL)
-response.raise_for_status()
-movies_df = pickle.load(BytesIO(response.content))
-print(f"✅ Search dataset loaded ({len(movies_df)} movies)")
+try:
+    print(f"Loading search data from {HF_URL} ...")
+
+    hf_token = os.getenv("HF_TOKEN")
+    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+
+    response = requests.get(HF_URL, headers=headers)
+    response.raise_for_status()
+
+    movies_df = pickle.load(BytesIO(response.content))
+    print(f" Search dataset loaded ({len(movies_df)} movies)")
+
+except Exception as e:
+    print(" Failed to load search dataset:", e)
+    movies_df = pd.DataFrame(columns=['title', 'description', 'genre', 'image', 'embedding', 'release_year'])
+
 
 # Convert numeric genre IDs to readable genre names
 movies_df["genre"] = movies_df["genre"].apply(map_genres)
