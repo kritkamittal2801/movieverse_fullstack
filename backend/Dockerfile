@@ -22,12 +22,12 @@ RUN pip install -r requirements.txt --only-binary=:all: --prefer-binary || pip i
 
 COPY . .
 
-ENV PORT=5000
 ENV PYTHONUNBUFFERED=1
 ENV HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
-EXPOSE 5000
+EXPOSE 10000
 
-CMD gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:${PORT} app:app
+CMD gunicorn --chdir backend --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:${PORT} app:app
+
 
 
