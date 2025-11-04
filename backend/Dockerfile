@@ -27,7 +27,8 @@ ENV HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
 EXPOSE 10000
 
-CMD gunicorn --chdir backend --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:${PORT} app:app
+CMD gunicorn --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:${PORT} app:app
+
 
 
 
