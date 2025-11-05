@@ -31,24 +31,35 @@ app.register_blueprint(search_bp, url_prefix="/api")
 
 init_db()
 # --- Load dataset from Hugging Face dynamically ---
-HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
+# HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
-try:
-    print(" Step 1: Starting to load movies from HF...")
-    hf_token = os.getenv("HF_TOKEN")
-    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+# try:
+#     print(" Step 1: Starting to load movies from HF...")
+#     hf_token = os.getenv("HF_TOKEN")
+#     headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
 
-    print(" Step 2: Sending request to Hugging Face...")
-    response = requests.get(HF_URL, headers=headers)
-    print(f" Step 3: Got response ({len(response.content)} bytes). Now unpickling...")
+#     print(" Step 2: Sending request to Hugging Face...")
+#     response = requests.get(HF_URL, headers=headers)
+#     print(f" Step 3: Got response ({len(response.content)} bytes). Now unpickling...")
 
-    response.raise_for_status()
-    movies_df = pickle.load(BytesIO(response.content))
-    print(f"Step 4: Loaded {len(movies_df)} movies from Hugging Face successfully!")
+#     response.raise_for_status()
+#     movies_df = pickle.load(BytesIO(response.content))
+#     print(f"Step 4: Loaded {len(movies_df)} movies from Hugging Face successfully!")
 
-except Exception as e:
-    print(" Failed to load dataset:", e)
-    movies_df = pd.DataFrame(columns=['title', 'description', 'image', 'embedding', 'genre'])
+# except Exception as e:
+#     print(" Failed to load dataset:", e)
+#     movies_df = pd.DataFrame(columns=['title', 'description', 'image', 'embedding', 'genre'])
+
+# TEMP: Skip HF dataset to test Render startup
+print(" Skipping dataset load for Render test")
+
+import numpy as np
+movies_df = pd.DataFrame([
+    {"title": "Inception", "description": "Dreams within dreams.", "genre": "Sci-Fi", "embedding": np.zeros(10)},
+    {"title": "Interstellar", "description": "Exploring space and time.", "genre": "Adventure", "embedding": np.zeros(10)}
+])
+embs = np.vstack(movies_df["embedding"].values)
+
 
 
 # Stack embeddings for similarity calculations
