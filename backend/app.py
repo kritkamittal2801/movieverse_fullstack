@@ -34,16 +34,17 @@ init_db()
 HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
 try:
-    print(f"Loading movies from {HF_URL} ...")
-
+    print(" Step 1: Starting to load movies from HF...")
     hf_token = os.getenv("HF_TOKEN")
     headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
 
+    print(" Step 2: Sending request to Hugging Face...")
     response = requests.get(HF_URL, headers=headers)
-    response.raise_for_status()
+    print(f" Step 3: Got response ({len(response.content)} bytes). Now unpickling...")
 
+    response.raise_for_status()
     movies_df = pickle.load(BytesIO(response.content))
-    print(f" Loaded {len(movies_df)} movies from Hugging Face (private access OK)")
+    print(f"Step 4: Loaded {len(movies_df)} movies from Hugging Face successfully!")
 
 except Exception as e:
     print(" Failed to load dataset:", e)
