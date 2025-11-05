@@ -18,6 +18,8 @@ from io import BytesIO
 from search_api import search_bp
 from huggingface_hub import HfApi
 load_dotenv()
+import sys
+print(" Starting Flask app...", file=sys.stderr)
 
 api = HfApi()
 api.whoami(token=os.getenv("HF_TOKEN"))
