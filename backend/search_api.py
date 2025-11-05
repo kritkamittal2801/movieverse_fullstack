@@ -36,24 +36,56 @@ def map_genres(genre_str):
 search_bp = Blueprint('search', __name__)
 CORS(search_bp)
 
-HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
+# HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
-try:
-    print(f"Loading search data from {HF_URL} ...")
+# try:
+#     print(f"Loading search data from {HF_URL} ...")
 
-    hf_token = os.getenv("HF_TOKEN")
-    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+#     hf_token = os.getenv("HF_TOKEN")
+#     headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
 
-    response = requests.get(HF_URL, headers=headers)
-    response.raise_for_status()
+#     response = requests.get(HF_URL, headers=headers)
+#     response.raise_for_status()
 
-    movies_df = pickle.load(BytesIO(response.content))
-    print(f" Search dataset loaded ({len(movies_df)} movies)")
+#     movies_df = pickle.load(BytesIO(response.content))
+#     print(f" Search dataset loaded ({len(movies_df)} movies)")
 
-except Exception as e:
-    print(" Failed to load search dataset:", e)
-    movies_df = pd.DataFrame(columns=['title', 'description', 'genre', 'image', 'embedding', 'release_year'])
+# except Exception as e:
+#     print(" Failed to load search dataset:", e)
+#     movies_df = pd.DataFrame(columns=['title', 'description', 'genre', 'image', 'embedding', 'release_year'])
 
+import numpy as np
+
+# Create a small movies DataFrame with dummy embeddings
+movies_df = pd.DataFrame([
+    {
+        "title": "Inception",
+        "description": "Dreams within dreams.",
+        "genre": "Sci-Fi",
+        "image": None,
+        "embedding": np.zeros(10),
+        "release_year": 2010
+    },
+    {
+        "title": "Interstellar",
+        "description": "Exploring space and time.",
+        "genre": "Adventure",
+        "image": None,
+        "embedding": np.zeros(10),
+        "release_year": 2014
+    },
+    {
+        "title": "The Dark Knight",
+        "description": "Batman faces the Joker.",
+        "genre": "Action",
+        "image": None,
+        "embedding": np.zeros(10),
+        "release_year": 2008
+    }
+])
+
+# Stack embeddings into a NumPy array
+embs = np.vstack(movies_df["embedding"].values)
 
 # Convert numeric genre IDs to readable genre names
 movies_df["genre"] = movies_df["genre"].apply(map_genres)
