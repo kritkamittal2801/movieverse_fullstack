@@ -25,9 +25,11 @@ HF_USERDATA_REPO = os.getenv("USERDATA_REPO")
 
 fs = HfFileSystem(token=os.getenv("HF_TOKEN"))
 
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY","fallback-secret-for-local")
+app.register_blueprint(search_bp, url_prefix="/api")
 
-
-
+init_db()
 # --- Load dataset from Hugging Face dynamically ---
 HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
@@ -51,11 +53,7 @@ except Exception as e:
 # Stack embeddings for similarity calculations
 embs = np.vstack(movies_df['embedding'].values)
 
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY","fallback-secret-for-local")
 
-
-app.register_blueprint(search_bp, url_prefix="/api")
 
 # Load movie data
 movies = movies_df  # movies_df is loaded from movies_with_images.pkl
@@ -438,6 +436,5 @@ def health():
     return "OK", 200
 
 if __name__ == "__main__":
-    init_db()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
