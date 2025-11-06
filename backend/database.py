@@ -26,6 +26,7 @@ class UserActivity(Base):
     __tablename__ = "user_activity"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer)
+    movie=Column(String)
     action = Column(String)
     timestamp = Column(DateTime, default=datetime.utcnow)
 

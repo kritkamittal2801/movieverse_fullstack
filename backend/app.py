@@ -2,23 +2,27 @@ from flask import Flask, request, session, redirect, url_for, render_template,js
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
-import csv
 import os
 from huggingface_hub import HfApi, HfFileSystem
 import io
 
-from database import init_db
+from database import init_db, SessionLocal, User, UserActivity
+from sqlalchemy.orm import Session
 import pickle
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
-import os
 import requests
+import math
 from io import BytesIO
+from database import SessionLocal, UserActivity
 from search_api import search_bp
 from huggingface_hub import HfApi
 load_dotenv()
 import sys
+print(">>> Running app.py from:", os.path.abspath(__file__))
+print(">>> Current working directory:", os.getcwd())
+
 print(" Starting Flask app...", file=sys.stderr)
 
 api = HfApi()
@@ -27,40 +31,38 @@ HF_USERDATA_REPO = os.getenv("USERDATA_REPO")
 
 fs = HfFileSystem(token=os.getenv("HF_TOKEN"))
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(os.path.dirname(__file__), "templates"),
+    static_folder=os.path.join(os.path.dirname(__file__), "static")
+)
 app.secret_key = os.getenv("SECRET_KEY","fallback-secret-for-local")
 app.register_blueprint(search_bp, url_prefix="/api")
+@app.route('/test')
+def test_page():
+    return render_template('index.html')
 
 init_db()
-# --- Load dataset from Hugging Face dynamically ---
-# HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/datasets/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
+#  --- Load dataset from Hugging Face dynamically ---
+HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
 
-# try:
-#     print(" Step 1: Starting to load movies from HF...")
-#     hf_token = os.getenv("HF_TOKEN")
-#     headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+try:
+    print(" Step 1: Starting to load movies from HF...")
+    hf_token = os.getenv("HF_TOKEN")
 
-#     print(" Step 2: Sending request to Hugging Face...")
-#     response = requests.get(HF_URL, headers=headers)
-#     print(f" Step 3: Got response ({len(response.content)} bytes). Now unpickling...")
+    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
 
-#     response.raise_for_status()
-#     movies_df = pickle.load(BytesIO(response.content))
-#     print(f"Step 4: Loaded {len(movies_df)} movies from Hugging Face successfully!")
+    print(" Step 2: Sending request to Hugging Face...")
+    response = requests.get(HF_URL, headers=headers)
+    print(f" Step 3: Got response ({len(response.content)} bytes). Now unpickling...")
 
-# except Exception as e:
-#     print(" Failed to load dataset:", e)
-#     movies_df = pd.DataFrame(columns=['title', 'description', 'image', 'embedding', 'genre'])
+    response.raise_for_status()
+    movies_df = pickle.load(BytesIO(response.content))
+    print(f"Step 4: Loaded {len(movies_df)} movies from Hugging Face successfully!")
 
-# TEMP: Skip HF dataset to test Render startup
-print(" Skipping dataset load for Render test")
-
-import numpy as np
-movies_df = pd.DataFrame([
-    {"title": "Inception", "description": "Dreams within dreams.", "genre": "Sci-Fi", "embedding": np.zeros(10)},
-    {"title": "Interstellar", "description": "Exploring space and time.", "genre": "Adventure", "embedding": np.zeros(10)}
-])
-embs = np.vstack(movies_df["embedding"].values)
+except Exception as e:
+    print(" Failed to load dataset:", e)
+    movies_df = pd.DataFrame(columns=['title', 'description', 'image', 'embedding', 'genre'])
 
 
 
@@ -73,32 +75,45 @@ embs = np.vstack(movies_df['embedding'].values)
 movies = movies_df  # movies_df is loaded from movies_with_images.pkl
 
 
-# Ensure users.csv exists
-if not os.path.exists('users.csv'):
-    with open('users.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['name', 'email', 'password'])
-
-import math
-
 def get_trending_movies(top_n=7):
-    """Return trending/popular movies based on frequency in user_activity.csv"""
-    activity_file = "user_activity.csv"
-    if not os.path.exists(activity_file):
+    """Return trending/popular movies based on frequency in UserActivity table."""
+    db = SessionLocal()
+    
+    try:
+        # Get most watched movies (action = 'click')
+        activities = (
+            db.query(UserActivity.movie)
+            .filter(UserActivity.action == "click")
+            .all()
+        )
+        
+        # Extract movie titles from query results
+        movie_list = [a.movie for a in activities if a.movie]
+
+        if not movie_list:
+            return movies_df.sample(top_n)[['title','description','image']].to_dict(orient='records')
+
+        # Count frequencies
+        movie_counts = pd.Series(movie_list).value_counts().head(top_n)
+        top_titles = movie_counts.index.tolist()
+
+        # Filter and preserve order
+        trending = movies_df[movies_df['title'].isin(top_titles)][['title','description','image']]
+        trending = trending.set_index('title').loc[top_titles].reset_index()
+        
+        return trending.to_dict(orient='records')
+
+    except Exception as e:
+        print("Error fetching trending movies:", e)
         return movies_df.sample(top_n)[['title','description','image']].to_dict(orient='records')
 
-    df = pd.read_csv(activity_file)
-    if df.empty or 'movie' not in df.columns:
-        return movies_df.sample(top_n)[['title','description','image']].to_dict(orient='records')
+    finally:
+        db.close()
 
-    counts = df['movie'].value_counts().head(top_n).index.tolist()
-    trending = movies_df[movies_df['title'].isin(counts)][['title','description','image']]
-    # Preserve order by counts
-    trending = trending.set_index('title').loc[counts].reset_index()
-    return trending.to_dict(orient='records')
 
 
 def generate_personalized_recommendations(movie_titles, top_n=7, max_history=10):
+    
     """Recency + genre-aware personalized recommendations."""
     if not movie_titles:
         return get_trending_movies(top_n)
@@ -238,33 +253,44 @@ def get_genre_weighted_recommendations(base_movie_title, top_n=10):
         })
     return recs
 
-
 # Default route
-@app.route('/')
+@app.route("/")
 def home():
-    return "App is running!"
-
-
+    print("Rendering index.html...", flush=True)
+    return render_template('index.html')
 
 @app.route("/moviewebsite")
 def movie_website():
     name = session.get("name")
     email = session.get("email")
 
+    db = SessionLocal()
     last_watched = None
-    try:
-       
-        df = pd.read_csv("user_activity.csv")
-        user_rows = df[df["email"] == email]
-        if not user_rows.empty:
-            # Get last valid movie the user watched
-            last_valid = user_rows[user_rows["movie"].notna() & (user_rows["movie"] != "undefined")]
-            if not last_valid.empty:
-                last_watched = last_valid.iloc[-1]["movie"]
-    except Exception as e:
-        print("Error reading activity:", e)
 
-    return render_template("moviewebsite.html", last_watched="Inception")
+    try:
+        # Find the logged-in user
+        user = db.query(User).filter(User.email == email).first()
+
+        if user:
+            # Get latest watched movie for this user
+            activity = (
+                db.query(UserActivity)
+                .filter(UserActivity.user_id == user.id, UserActivity.action == "click")
+                .order_by(UserActivity.timestamp.desc())
+                .first()
+            )
+
+            if activity:
+                last_watched = activity.movie
+
+    except Exception as e:
+        print("Error reading activity from DB:", e)
+
+    finally:
+        db.close()
+
+    # If no movie found, fallback to a default
+    return render_template("moviewebsite.html", last_watched=last_watched or "Inception")
 
 
 def normalize_title(title):
@@ -273,7 +299,7 @@ def normalize_title(title):
 
 @app.route("/recommendations")
 def recommendations():
-
+    db = SessionLocal()
     # --- Not logged in: show random recommendations ---
     if 'email' not in session:
         recs = movies_df.sample(7)[['title', 'description', 'image']].to_dict(orient='records')
@@ -285,17 +311,15 @@ def recommendations():
     email = session['email']
 
     # --- Load user activity ---
-    watched_movies = []
-    if os.path.exists("user_activity.csv"):
-        user_activity = pd.read_csv("user_activity.csv")
-        user_activity['timestamp'] = pd.to_datetime(user_activity['timestamp'])
-        
-        # Filter for user's clicks (watched movies)
-        user_activity = user_activity[
-            (user_activity['email'] == email) & (user_activity['action'] == 'click')
-        ].sort_values('timestamp')
+    user = db.query(User).filter(User.email == session['email']).first()
+    user_activity = (
+    db.query(UserActivity)
+    .filter(UserActivity.user_id == user.id, UserActivity.action == 'click')
+    .order_by(UserActivity.timestamp)
+    .all()
+)
+    watched_movies = [a.movie for a in user_activity]
 
-        watched_movies = user_activity['movie'].dropna().tolist()
 
     # --- Default random fallback ---
     recommended_for_you = movies_df.sample(7)[['title', 'description', 'image', 'tmdb_id']].to_dict(orient='records')
@@ -318,6 +342,7 @@ def recommendations():
         recommended_for_you = generate_personalized_recommendations(recent_movies, top_n=7)
 
     # --- Final JSON response ---
+    db.close()
     return jsonify({
         "recommended_for_you": recommended_for_you,
         "because_you_watched": {
@@ -325,8 +350,6 @@ def recommendations():
             "recommendations": because_you_watched
         }
     })
-
-
 
 
 @app.route('/payment')
@@ -338,66 +361,58 @@ def video():
     return render_template('video.html')
 
 # Signup route
-@app.route('/signup', methods=['GET' , 'POST'])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    db = SessionLocal()
     data = request.form
-    name = data.get('name')
+    username = data.get('name')
     email = data.get('email')
     password = data.get('password')
+
+    # Check if user exists
+    existing_user = db.query(User).filter((User.email == email) | (User.username == username)).first()
+    if existing_user:
+        return render_template('index.html', error="Email or username already registered")
 
     hashed_password = generate_password_hash(password)
-    users_df = pd.read_csv('users.csv')
-
-    if email in users_df['email'].values:
-        return render_template('index.html', error="Email already registered")
-
-    # Append new user to CSV
-    with open('users.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([name, email, hashed_password])
-
+    new_user = User(username=username, email=email, password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    db.close()
     return render_template('index.html', success="Signup successful. Please login.")
 
+
 # Login route
+
 @app.route('/login', methods=['POST'])
 def login():
+    db = SessionLocal()
     data = request.form
     email = data.get('email')
     password = data.get('password')
 
-    users_df = pd.read_csv('users.csv')
-    user_row = users_df[users_df['email'] == email]
-
-    if user_row.empty:
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
         return render_template('index.html', error="User not found")
 
-    hashed_password = user_row.iloc[0]['password']
-    if check_password_hash(hashed_password, password):
-        session['email'] = email
-        session['name'] = user_row.iloc[0]['name']
-        
-            # Get the user's last watched/searched movie from user_activity.csv
-        last_watched = None
-        activity_file = "user_activity.csv"
-        if os.path.exists(activity_file):
-        
-            user_activity = pd.read_csv(activity_file)
-            user_logs = user_activity[user_activity['email'] == email]
-            if not user_logs.empty:
-                valid_logs = user_logs[user_logs['movie'].notna() & (user_logs['movie'] != 'undefined')]
-                if not valid_logs.empty:
-                    last_watched = valid_logs.iloc[-1]['movie']
+    if check_password_hash(user.password, password):
+        session['email'] = user.email
+        session['name'] = user.username
 
-
-        return render_template(
-            'moviewebsite.html',
-            name=user_row.iloc[0]['name'],
-            last_watched=last_watched
+        # Get last watched movie
+        last_activity = (
+            db.query(UserActivity)
+            .filter(UserActivity.user_id == user.id, UserActivity.action == "click")
+            .order_by(UserActivity.timestamp.desc())
+            .first()
         )
+        last_watched = last_activity.movie if last_activity else None
+        
+        return render_template('moviewebsite.html', name=user.username, last_watched=last_watched)
+    db.close()
+    return render_template('index.html', error="Incorrect password")
 
-
-    else:
-        return render_template('index.html', error="Incorrect password")
 
 @app.route('/logout')
 def logout():
@@ -412,10 +427,10 @@ def get_movies():
 
 from datetime import datetime
 from flask import request, jsonify
-import csv
 
 @app.route('/activity', methods=['POST'])
 def activity():
+    db = SessionLocal()
     if 'email' not in session:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
@@ -426,22 +441,17 @@ def activity():
     if not action or not movie:
         return jsonify({'status': 'error', 'message': 'Missing action or movie'}), 400
 
-    file_path = 'user_activity.csv'
-    file_exists = os.path.exists(file_path)
+    user = db.query(User).filter(User.email == session['email']).first()
+    if not user:
+        return jsonify({'status': 'error', 'message': 'User not found'}), 404
 
-    with open(file_path, 'a', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(['timestamp', 'email', 'name', 'action', 'movie'])
-
-        writer.writerow([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            session.get('email'),
-            session.get('name'),
-            action,
-            movie
-        ])
-
+    activity = UserActivity(user_id=user.id, action=action)
+    # Store movie in a new column
+    setattr(activity, "movie", movie)
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+    db.close()
     return jsonify({'status': 'success'})
 
 
