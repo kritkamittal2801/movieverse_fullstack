@@ -167,6 +167,15 @@ def generate_personalized_recommendations(movie_titles, top_n=7, max_history=10)
             "score": float(score)
         })
 
+        unique_titles = set()
+        unique_recs = []
+        for r in recs:
+            t = r['title'].strip().lower()
+            if t not in unique_titles:
+                unique_titles.add(t)
+                unique_recs.append(r)
+
+        recs = unique_recs
         if len(recs) >= top_n:
             break
 
@@ -251,7 +260,18 @@ def get_genre_weighted_recommendations(base_movie_title, top_n=10):
             "image": movies_df.iloc[i]['image'],
             "tmdb_id": str(movies_df.iloc[i].get('tmdb_id', ''))
         })
-    return recs
+    
+    # remove duplicate titles 
+    unique_titles = set()
+    unique_recs = []
+    for r in recs:
+        t = r['title'].strip().lower()
+        if t not in unique_titles:
+            unique_titles.add(t)
+            unique_recs.append(r)
+
+    return unique_recs
+
 
 # Default route
 @app.route("/")
