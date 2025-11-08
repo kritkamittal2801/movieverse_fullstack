@@ -5,8 +5,9 @@ import pandas as pd
 import os
 from huggingface_hub import HfApi, HfFileSystem
 import io
+from database import upload_db_to_hf
 
-from database import init_db, SessionLocal, User, UserActivity
+from database import download_db_from_hf, init_db, SessionLocal, User, UserActivity
 from sqlalchemy.orm import Session
 import pickle
 import numpy as np
@@ -42,6 +43,7 @@ app.register_blueprint(search_bp, url_prefix="/api")
 def test_page():
     return render_template('index.html')
 
+download_db_from_hf()
 init_db()
 #  --- Load dataset from Hugging Face dynamically ---
 HF_URL = os.getenv("MOVIES_URL", "https://huggingface.co/kritikamittal2801/movierverse-data/resolve/main/movies_full.pkl")
@@ -63,8 +65,6 @@ try:
 except Exception as e:
     print(" Failed to load dataset:", e)
     movies_df = pd.DataFrame(columns=['title', 'description', 'image', 'embedding', 'genre'])
-
-
 
 # Stack embeddings for similarity calculations
 embs = np.vstack(movies_df['embedding'].values)
@@ -380,6 +380,11 @@ def signup():
     db.commit()
     db.refresh(new_user)
     db.close()
+    try:
+        upload_db_to_hf()
+    except Exception as e:
+        print("Warning: failed to upload DB after signup:", e)
+
     return render_template('index.html', success="Signup successful. Please login.")
 
 
@@ -452,6 +457,11 @@ def activity():
     db.commit()
     db.refresh(activity)
     db.close()
+    try:
+        upload_db_to_hf()
+    except Exception as e:
+        print("Warning: failed to upload DB after activity:", e)
+
     return jsonify({'status': 'success'})
 
 
