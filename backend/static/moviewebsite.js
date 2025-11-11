@@ -16,22 +16,51 @@ async function postActivity(action, movie) {
     }
 }
 
+function initSliders() {
+document.querySelectorAll(".movie-list-wrapper").forEach((wrapper) => {
+  const list = wrapper.querySelector(".movie-list");
+  const rightArrow = wrapper.querySelector(".right-arrow");
+  const leftArrow = wrapper.querySelector(".left-arrow");
 
-arrows.forEach((arrow,ind)=>{
-    let counter=0;
-    arrow.addEventListener("click",()=>{
-        const ratio=Math.floor(window.innerWidth/260);
-        let itemnumber=movielists[ind].querySelectorAll('img').length;
-        if(counter<(itemnumber-5+5-ratio)){
-            movielists[ind].style.transform= `translateX(${movielists[ind].computedStyleMap().get("transform")[0].x.value-290}px)`;
-            counter++;
-        }
-        else{
-            movielists[ind].style.transform= `translateX(0)`;
-            counter=0;
-        }
-    })
-});
+  let counter = 0;
+  const itemWidth = 290; // roughly one movie card width (adjust as needed)
+  const visibleItems = Math.floor(window.innerWidth / 260);
+  const totalItems = list.querySelectorAll(".movie-list-item").length;
+  const maxCounter = totalItems - visibleItems;
+
+  // Add smooth transition (important for visual effect)
+  list.style.transition = "transform 0.8s ease-in-out";
+
+  // Right arrow click
+  if (rightArrow) {
+    rightArrow.addEventListener("click", () => {
+      if (counter < maxCounter) {
+        counter++;
+        list.style.transform = `translateX(-${counter * itemWidth}px)`;
+      } else {
+        // optional: loop back to start
+        counter = 0;
+        list.style.transform = `translateX(0)`;
+      }
+    });
+  }
+
+  // Left arrow click
+  if (leftArrow) {
+    leftArrow.addEventListener("click", () => {
+      if (counter > 0) {
+        counter--;
+        list.style.transform = `translateX(-${counter * itemWidth}px)`;
+      } else {
+        // optional: jump to end if at start
+        counter = maxCounter;
+        list.style.transform = `translateX(-${counter * itemWidth}px)`;
+      }
+    });
+  }
+});}
+
+
 
 // for changing dark theme
 const ball=document.querySelector(".toggle-ball");
@@ -116,54 +145,81 @@ function getTmdbUrl(title, tmdb_id) {
 
 
 
+let searchTimeout; // debounce timer
+let loaderTimeout; // to delay showing the loader
 
-// Live search
-modalSearchInput.addEventListener('input', async () => {
+modalSearchInput.addEventListener('input', () => {
     const query = modalSearchInput.value.trim();
+    const loader = document.getElementById('search-loader');
+    const resultsDiv = document.getElementById('modal-results');
+
+    clearTimeout(searchTimeout);
+    clearTimeout(loaderTimeout);
+
     if (!query) {
-        modalResultsDiv.innerHTML = '';
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+        loader.style.display = 'none';
         return;
     }
 
-    try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        const results = await response.json();
+    // Wait 400ms after user stops typing before making request
+    searchTimeout = setTimeout(async () => {
+        // Delay loader display — only show if it’s taking time
+        loaderTimeout = setTimeout(() => {
+            loader.style.display = 'flex';
+            resultsDiv.style.display = 'none';
+        }, 200); // loader appears only if slow
 
-        if (results.length === 0) {
-            modalResultsDiv.innerHTML = '<p>No movies found</p>';
-        } else {
-            modalResultsDiv.innerHTML = results.map(movie => `
-    <div class="search-result" 
-         data-title="${movie.title}" 
-         data-tmdb-id="${movie.tmdb_id}">
-        <img src="${movie.image || 'static/img/default.jpg'}" class="search-result-img" alt="${movie.title}">
-        <div class="search-result-text">
-            <b>${movie.title}</b><br>
-            <small>${movie.description}</small>
-        </div>
-    </div>
-`).join('');
+        try {
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            const results = await response.json();
 
-// Add click handlers to each result
-document.querySelectorAll('.search-result').forEach(el => {
-    el.addEventListener('click', () => {
-        const title = el.dataset.title;
-        const tmdbId = el.dataset.tmdbId;
+            // Stop loader
+            clearTimeout(loaderTimeout);
+            loader.style.display = 'none';
+            resultsDiv.style.display = 'block';
+            resultsDiv.classList.remove('show');
+            resultsDiv.offsetHeight; // force reflow for animation reset
 
-        if (!title || title === 'undefined') return;
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p>No movies found</p>';
+            } else {
+                resultsDiv.innerHTML = results.map(movie => `
+                    <div class="search-result"
+                         data-title="${movie.title}"
+                         data-tmdb-id="${movie.tmdb_id}">
+                        <img src="${movie.image || 'static/img/default.jpg'}" class="search-result-img" alt="${movie.title}">
+                        <div class="search-result-text">
+                            <b>${movie.title}</b><br>
+                            <small>${movie.description}</small>
+                        </div>
+                    </div>
+                `).join('');
 
-        postActivity('click', title).then(() => {
-            window.open(getTmdbUrl(title, tmdbId), '_blank');
-        });
-    });
-});
+                document.querySelectorAll('.search-result').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const title = el.dataset.title;
+                        const tmdbId = el.dataset.tmdbId;
+                        if (!title || title === 'undefined') return;
 
+                        postActivity('click', title).then(() => {
+                            window.open(getTmdbUrl(title, tmdbId), '_blank');
+                        });
+                    });
+                });
+            }
 
+            // Smooth fade-in animation
+            requestAnimationFrame(() => resultsDiv.classList.add('show'));
+        } catch (err) {
+            clearTimeout(loaderTimeout);
+            loader.style.display = 'none';
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>Error fetching results</p>';
+            console.error(err);
         }
-    } catch (err) {
-        modalResultsDiv.innerHTML = '<p>Error fetching results</p>';
-        console.error(err);
-    }
+    }, 400); // wait 400ms after typing stops
 });
 
 /* ---------- Log searches on Enter ---------- */
@@ -240,6 +296,7 @@ if (data.because_you_watched && data.because_you_watched.recommendations.length 
     } catch (err) {
         console.error('Failed to load recommendations:', err);
     }
+    initSliders();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

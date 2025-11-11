@@ -6,7 +6,7 @@ import os
 from huggingface_hub import HfApi, HfFileSystem
 import io
 from database import upload_db_to_hf
-
+from flask import redirect, url_for
 from database import download_db_from_hf, init_db, SessionLocal, User, UserActivity
 from sqlalchemy.orm import Session
 import pickle
@@ -68,8 +68,6 @@ except Exception as e:
 
 # Stack embeddings for similarity calculations
 embs = np.vstack(movies_df['embedding'].values)
-
-
 
 # Load movie data
 movies = movies_df  # movies_df is loaded from movies_with_images.pkl
@@ -276,11 +274,15 @@ def get_genre_weighted_recommendations(base_movie_title, top_n=10):
 # Default route
 @app.route("/")
 def home():
+    if 'email' in session:
+        return redirect(url_for('movie_website1'))
     print("Rendering index.html...", flush=True)
     return render_template('index.html')
 
 @app.route("/moviewebsite")
 def movie_website():
+    if 'email' not in session:
+        return redirect(url_for('home'))  # redirect to login if not logged in
     name = session.get("name")
     email = session.get("email")
 
@@ -316,6 +318,11 @@ def movie_website():
 def normalize_title(title):
     # remove all non-alphanumeric characters, lowercase
     return ''.join(c for c in title.lower() if c.isalnum())
+
+@app.route('/create_new_profile')
+def create_new_profile():
+    session.clear()  # same as logout
+    return redirect(url_for('home'))  # goes to index.html (login/signup)
 
 @app.route("/recommendations")
 def recommendations():
@@ -409,7 +416,6 @@ def signup():
 
 
 # Login route
-
 @app.route('/login', methods=['POST'])
 def login():
     db = SessionLocal()
@@ -419,33 +425,44 @@ def login():
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
+        db.close()
         return render_template('index.html', error="User not found")
 
     if check_password_hash(user.password, password):
         session['email'] = user.email
         session['name'] = user.username
 
-        # Get last watched movie
-        last_activity = (
-            db.query(UserActivity)
-            .filter(UserActivity.user_id == user.id, UserActivity.action == "click")
-            .order_by(UserActivity.timestamp.desc())
-            .first()
-        )
-        last_watched = last_activity.movie if last_activity else None
-        
-        return render_template('moviewebsite.html', name=user.username, last_watched=last_watched)
+        db.close()
+        return redirect(url_for('movie_website'))
+
     db.close()
     return render_template('index.html', error="Incorrect password")
+
+@app.route('/movie')
+def movie_website1():
+    if 'email' not in session:
+        return redirect(url_for('home'))
+
+    db = SessionLocal()
+    user = db.query(User).filter(User.email == session['email']).first()
+
+    last_activity = (
+        db.query(UserActivity)
+        .filter(UserActivity.user_id == user.id, UserActivity.action == "click")
+        .order_by(UserActivity.timestamp.desc())
+        .first()
+    )
+    last_watched = last_activity.movie if last_activity else None
+
+    db.close()
+    return render_template('moviewebsite.html', name=user.username, last_watched=last_watched)
 
 
 @app.route('/logout')
 def logout():
     session.clear()  # Clear all session data
-    return render_template('index.html')
+    return redirect(url_for('home'))
 
-
-# Movies route
 @app.route('/movies', methods=['GET'])
 def get_movies():
     return movies.to_json(orient='records')
@@ -471,7 +488,6 @@ def activity():
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
 
     activity = UserActivity(user_id=user.id, action=action)
-    # Store movie in a new column
     setattr(activity, "movie", movie)
     db.add(activity)
     db.commit()
@@ -489,8 +505,14 @@ def activity():
 def health():
     return "OK", 200
 
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Render uses dynamic port
+    port = int(os.environ.get("PORT", 10000))  
     app.run(host="0.0.0.0", port=port)
 

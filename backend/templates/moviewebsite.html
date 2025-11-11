@@ -32,7 +32,7 @@
                     <a href="{{ url_for('payment_page') }}" class="link-to-video">Choose Your Plan</a>
                     </li>
                     <li class="menu-list-item">
-                    <a href="{{ url_for('home') }}" class="link-to-video">Create a new profile</a>
+                    <a href="{{ url_for('create_new_profile') }}" class="link-to-video">Create a new profile</a>
                     </li>
                                         
                 </ul>
@@ -74,7 +74,21 @@
     <!-- Centered Search Modal -->
 <div id="search-modal" class="search-modal">
     <input type="text" id="modal-search" placeholder="Search movies...">
-    <div id="modal-results"></div>
+    <!-- Wrap results and loader in one container -->
+<div id="search-results-container">
+  <!-- Loader -->
+  <div id="search-loader" class="loader-container" style="display: none;">
+    <div class="loader"></div>
+    <p class="loader-text">Searching movies...</p>
+  </div>
+
+  <!-- Results -->
+  <div id="modal-results"></div>
+</div>
+
+
+   
+
 </div>
 
 
@@ -89,7 +103,7 @@
         <i class="fa-solid fa-bookmark sidebar-item"></i>
         <i class="fa-solid fa-tv sidebar-item"></i>
         <i class="fa-solid fa-hourglass sidebar-item"></i>
-        <a href="{{ url_for('home') }}" class="link-to-video"><i class="fa-solid fa-users sidebar-item"></i></a>
+        <a href="{{ url_for('create_new_profile') }}" class="link-to-video"><i class="fa-solid fa-users sidebar-item"></i></a>
         <a href="{{ url_for('payment_page') }}"class="link-to-video"><i class="fa-solid fa-cart-shopping sidebar-item"></i></a>
     </div>
 
@@ -107,12 +121,13 @@
                     <button class="featured-button">WATCH</button>
                 </a>
             </div>
-
+            
        <div class="movie-list-container" id="recommended-for-you-section">
     <h1 class="movie-list-title">RECOMMENDED FOR YOU</h1>
     <div class="movie-list-wrapper">
+        <i class="fa-solid fa-circle-arrow-left arrow left-arrow"></i>
         <div class="movie-list" id="recommended-for-you-list"></div>
-        <i class="fa-solid fa-circle-arrow-right arrow"></i>
+        <i class="fa-solid fa-circle-arrow-right arrow right-arrow"></i>
     </div>
 </div>
 
@@ -121,18 +136,17 @@
         Because you watched <span id="last-watched-title"></span>
     </h1>
     <div class="movie-list-wrapper">
+        <i class="fa-solid fa-circle-arrow-left arrow left-arrow"></i>
         <div class="movie-list" id="because-you-watched-list"></div>
-        <i class="fa-solid fa-circle-arrow-right arrow"></i>
+        <i class="fa-solid fa-circle-arrow-right arrow right-arrow"></i>
     </div>
 </div>
-
-
-
 
 
             <div class="movie-list-container">
                 <h1 class="movie-list-title" id="movies">NEW RELEASES</h1>
                 <div class="movie-list-wrapper">
+                    <i class="fa-solid fa-circle-arrow-left arrow left-arrow"></i>
                     <div class="movie-list">
                         <div class="movie-list-item">
                             <img class="movie-list-item-img" src="https://universnews.tn/wp-content/uploads/2022/05/Le-teaser-est-la-et-il-depasse-les-attentes-Premier.jpg" alt="">
@@ -202,13 +216,15 @@
 
                         </div>
                     </div>
-                    <i class="fa-solid fa-circle-arrow-right arrow"></i>
+                    <i class="fa-solid fa-circle-arrow-right arrow right-arrow"></i>
                 </div>
             </div>
             <div class="movie-list-container">
                 <h1 class="movie-list-title" id="popular">POPULAR</h1>
                 <div class="movie-list-wrapper">
+                    <i class="fa-solid fa-circle-arrow-left arrow left-arrow"></i>
                     <div class="movie-list">
+                        
                         <div class="movie-list-item">
                             <img class="movie-list-item-img" src="{{ url_for('static', filename='img/19.jpg') }}" alt="">
                             <span class="movie-list-item-title">Her</span>
@@ -290,7 +306,7 @@
 
                         </div>
                     </div>
-                    <i class="fa-solid fa-circle-arrow-right arrow"></i>
+                    <i class="fa-solid fa-circle-arrow-right arrow right-arrow"></i>
                 </div>
             </div>
 
@@ -311,6 +327,7 @@
             <div class="movie-list-container">
                 <h1 class="movie-list-title" id="series">WEB SERIES</h1>
                 <div class="movie-list-wrapper">
+                    <i class="fa-solid fa-circle-arrow-left arrow left-arrow"></i>
                     <div class="movie-list">
                         <div class="movie-list-item">
                             <img class="movie-list-item-img" src="https://bingeddata.s3.amazonaws.com/uploads/2020/04/Mirzapur-Forms-Connection-Between-Netflix-And-Amazon-Prime-Video-.jpg" alt="">
@@ -393,13 +410,15 @@
 
                         </div>
                     </div>
-                    <i class="fa-solid fa-circle-arrow-right arrow"></i>
+                    <i class="fa-solid fa-circle-arrow-right arrow right-arrow"></i>
                 </div>
             </div>
             <div class="movie-list-container">
                 <h1 class="movie-list-title" id="tv-shows">TV SHOWS</h1>
                 <div class="movie-list-wrapper">
+                    <i class="fa-solid fa-circle-arrow-left arrow left-arrow"></i>
                     <div class="movie-list">
+                        
                         <div class="movie-list-item">
                             <img class="movie-list-item-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXxgD8nz1A4HSJvYuu2tltTMN5daB1f4yA1_Yod-6cwtjZUrAl4SbRFSFbtahUI2fZYU8&usqp=CAU" alt="">
                             <span class="movie-list-item-title">Her</span>
@@ -481,7 +500,7 @@
 
                         </div>
                     </div>
-                    <i class="fa-solid fa-circle-arrow-right arrow"></i>
+                    <i class="fa-solid fa-circle-arrow-right arrow right-arrow"></i>
                 </div>
             </div>
 
